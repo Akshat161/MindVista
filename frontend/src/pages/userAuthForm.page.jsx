@@ -1,0 +1,140 @@
+
+import React from 'react';
+import InputBox from '../components/input.component';
+import googleIcon from '../imgs/google.png';
+import AnimationWrapper from '../common/page-animation';
+import axios from 'axios';
+import { Link,Navigate } from 'react-router-dom';
+import { Toaster, toast } from 'react-hot-toast';
+import { storeInSession } from '../common/session';
+import { UserContext } from '../App';
+import { useContext } from 'react';
+
+const UserAuthForm = ({ type }) => {
+
+
+   let { userAuth: {access_token},setUserAuth} = useContext(UserContext)
+  
+
+  
+  const userAuthThroughServer=(serverRoute,formData)=>{
+
+    axios.post(import.meta.env.VITE_SERVER_DOMAIN+serverRoute,formData)
+    .then(({data})=>{
+
+       storeInSession("user",JSON.stringify(data));
+
+       setUserAuth(data);
+    }
+    )
+    .catch(({response})=>{
+      toast.error(response.data.error)
+    })
+  }
+
+  const handelSubmit = (e) => {
+    e.preventDefault();
+
+    const formElement = e.target; // Use the event's target as fallback
+    
+   let serverRoute = type=='sign-in'?"/signin":"/signup";
+
+    if (!(formElement instanceof HTMLFormElement)) {
+      return toast.error("Failed to locate form element.");
+    }
+
+    let form = new FormData(formElement);
+    let formData = {};
+
+    for (let [key, value] of form.entries()) {
+      formData[key] = value;
+    }
+
+    let { fullname, email, password } = formData;
+
+    if (type === 'sign-up' && !fullname) {
+      return toast.error('Enter Full Name');
+    }
+
+    if (!email) {
+      return toast.error('Enter Email');
+    }
+
+    if (!/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+      return toast.error('Email is invalid');
+    }
+
+    if (!password) {
+      return toast.error('Enter Password');
+    }
+
+    if (!/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/.test(password)) {
+      return toast.error(
+        'Password should be 6 to 20 characters long with a numeric, 1 lowercase, and 1 uppercase letter'
+      );
+    }
+
+    userAuthThroughServer(serverRoute,formData);
+
+    // toast.success(`${type === 'sign-in' ? 'Logged in' : 'Signed up'} successfully!`);
+  };
+
+  return (
+
+    access_token? 
+    <Navigate to="/"/>
+    :
+    <AnimationWrapper keyValue={type}>
+      <section className="h-cover flex items-center justify-center">
+        <Toaster />
+
+        <form className="w-[80%] max-w-[400px]" onSubmit={handelSubmit}>
+          <h1 className="text-4xl font-gelasio capitalize text-center mb-24">
+            {type === 'sign-in' ? 'Welcome Back' : 'Join Us Today'}
+          </h1>
+
+          {type === 'sign-in' ? null : (
+            <InputBox name="fullname" type="text" placeholder="Full Name" icon="fi-rr-user" />
+          )}
+
+          <InputBox name="email" type="email" placeholder="Email" icon="fi-rr-envelope" />
+          <InputBox name="password" type="password" placeholder="Password" icon="fi-rr-key" />
+
+          <button className="btn-dark center mt:14" type="submit">
+            {type.replace('-', ' ')}
+          </button>
+
+          <div className="relative w-full flex items-center gap-2 my-10 opacity-10 uppercase text-black font-bold">
+            <hr className="w-1/2 border-black" />
+            <p>Or</p>
+            <hr className="w-1/2 border-black" />
+          </div>
+
+          <button className="btn-dark flex items-center justify-center gap-4 w-[90%] center">
+            <img src={googleIcon} className="w-5" alt="Google Icon" />
+            Continue with Google
+          </button>
+
+          {type === 'sign-in' ? (
+            <p className="mt-6 text-dark-grey text-xl text-center">
+              Don&apos;t have an account?
+              <Link to="/signup" className="underline text-black text-xl ml-1">
+                Join us today
+              </Link>
+            </p>
+          ) : (
+            <p className="mt-6 text-dark-grey text-xl text-center">
+              Already a member?
+              <Link to="/signin" className="underline text-black text-xl ml-1">
+                Sign in here
+              </Link>
+            </p>
+          )}
+        </form>
+      </section>
+    </AnimationWrapper>
+  );
+};
+
+export default UserAuthForm;
+
