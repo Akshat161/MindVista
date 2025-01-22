@@ -62,6 +62,7 @@ const BlogEditor = () => {
             }
 
             const result = await response.json();
+            
             console.log("Upload successful!");
 
            

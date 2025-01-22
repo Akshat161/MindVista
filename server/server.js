@@ -16,7 +16,7 @@ import Blog from './Schema/Blog.js'
 
 const app = express();
 
-let PORT = 3000;
+let PORT = 5000;
 let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/; // regex for email
 let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/; // regex for password
 
@@ -66,32 +66,48 @@ app.post('/uploadImageInBlog', upload.single('file'), async (req, res) => {
         res.status(error.statusCode || 500).json({ message: error.message || "Internal Server Error" });
     }
 });
+app.post(
+    '/uploadBanner',
+    upload.fields([{ name: 'banner', maxCount: 1 }]),
+    async (req, res) => {
+        try {
+            const bannerLocalPath = req.files?.banner?.[0]?.path;
 
-app.post('/uploadBanner', upload.fields([
-    { name: "banner", maxCount: 1 }
-]), async (req, res) => {
-    try {
-        
-        const bannerLocalPath = req.files?.banner?.[0]?.path;
+            if (!bannerLocalPath) {
+                return res.status(400).json({ message: 'Banner is required' });
+            }
 
-        if (!bannerLocalPath) {
-            throw new Error(400, "Banner is required");
+            // Upload the banner to Cloudinary
+            let banner;
+            try {
+                banner = await uploadOnCloudinary(bannerLocalPath);
+            } catch (uploadError) {
+                console.error('Error uploading to Cloudinary:', uploadError);
+                return res
+                    .status(500)
+                    .json({ message: 'Failed to upload banner to Cloudinary' });
+            }
+
+            // Check if the upload was successful
+            if (!banner) {
+                console.error('No banner returned from Cloudinary upload.');
+                return res
+                    .status(500)
+                    .json({ message: 'Failed to upload banner to Cloudinary' });
+            }
+
+            console.log('Banner uploaded:', banner.url);
+
+            // Respond with the uploaded banner URL
+            res.status(200).json({ banner: banner.url });
+        } catch (error) {
+            console.error('Error in /uploadBanner route:', error);
+            res
+                .status(error.statusCode || 500)
+                .json({ message: error.message || 'Internal Server Error' });
         }
-
-        
-        const banner = await uploadOnCloudinary(bannerLocalPath);
-
-        if (!banner) {
-            throw new Error(400, "Failed to upload banner to Cloudinary");
-        }
-
-        
-        res.status(200).json({ banner:banner.url });
-    } catch (error) {
-       
-        res.status(error.statusCode || 500).json({ message: error.message || "Internal Server Error" });
     }
-});
+);
 
 
 app.post("/signup", (req, res) => {
@@ -232,6 +248,8 @@ app.post("/create-blog",verifyJWT,(req,res)=>{
 app.post("/search-blogs",(req,res)=>{
 
     let {tag} =req.body;
+    let {page}=req.body.page;
+  
    
     let findQuery={ tags:tag , draft:false }
 
@@ -241,6 +259,7 @@ app.post("/search-blogs",(req,res)=>{
     .populate("author","personal_info.profile_img personal_info.username personal_info.fullname -_id")
     .sort({"publishedAt":-1})
     .select("blog_id title des banner activity tags publishedAt -_id")
+    .skip((page-1)*maxLimit)
     .limit(maxLimit)
     .then((blogs)=>{
         return res.status(200).json({blogs})
@@ -251,10 +270,26 @@ app.post("/search-blogs",(req,res)=>{
 
 })
 
+
+
+app.post('/search-blogs-count',(req,res)=>{
+    let{tag}=req.body;
+
+    let findQuery ={tags:tag , draft :false}
+
+    Blog.countDocuments(findQuery)
+    .then(count =>{
+        return res.status(200).json({totalDocs: count})
+    })
+    .catch(err =>{
+        return res.status(500).json({error: err.message})
+    })
+})
+
 app.post('/latest-blogs',(req,res)=>{
 
     let {page} =req.body;
-
+    
     let maxLimit=5;
 
     Blog.find({draft:false})

@@ -8,6 +8,7 @@ export default {
             'black': '#242424',
             'grey': '#F3F3F3',
             'dark-grey': '#6B6B6B',
+            'light-grey':'#d1d5db',
             'red': '#FF4E4E',
             'transparent': 'transparent',
             'twitter': '#1DA1F2',
