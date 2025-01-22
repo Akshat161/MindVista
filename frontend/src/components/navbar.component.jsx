@@ -29,12 +29,12 @@ const Navbar = () => {
         <>
         <nav className="navbar">
 
-            <Link to="/" className="flex-none w-15 h-20 md:-mr-12 md:-ml-10 ">
+            <Link to="/" className="flex-none w-15 h-20  ">
                 <img src={logo} className="w-full ml-0" />
             </Link>
          <div>
 
-         <h1 className='text-3xl font-gelasio capatalize text-center mr-20 '>MindVista</h1>
+         
             
             </div>
             <div className={'absolute bg-white w-full left-0 top-full mt-0.! border-b border-grey md:border-0 md:block md:relative md:inset-0 md:p-0 md:w-auto py-4 px-[5vw] md:show ' + (searchBoxVisibility?"show":"hide")}>

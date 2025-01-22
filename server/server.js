@@ -2,12 +2,16 @@ import express from 'express';
 import mongoose from 'mongoose';
 import 'dotenv/config'
 import bcrypt from 'bcrypt'
-import { nanoid } from 'nanoid'; //generates random unique string 
+import { nanoid } from 'nanoid';  //generates random unique string 
 import jwt from 'jsonwebtoken'
 import cors from 'cors';
+import { uploadOnCloudinary } from './utils/cloudinary.js';
+import { upload } from './middleware/multer.middleware.js';
+import verifyJWT from './middleware/verifyJWT.js';
 
 // schemas below
 import User from './Schema/User.js'
+import Blog from './Schema/Blog.js'
 
 
 const app = express();
@@ -47,6 +51,48 @@ const generateUsername = async (email) => {
     return username
 
 }
+
+app.post('/uploadImageInBlog', upload.single('file'), async (req, res) => {
+    try {
+        const imageLocalPath = req.file.path;
+        const image = await uploadOnCloudinary(imageLocalPath);
+
+        if (!image) {
+            throw new Error(400, "Failed to upload image to Cloudinary");
+        }
+        
+        res.status(200).json({ file: { url: image.url } }); 
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ message: error.message || "Internal Server Error" });
+    }
+});
+
+app.post('/uploadBanner', upload.fields([
+    { name: "banner", maxCount: 1 }
+]), async (req, res) => {
+    try {
+        
+        const bannerLocalPath = req.files?.banner?.[0]?.path;
+
+        if (!bannerLocalPath) {
+            throw new Error(400, "Banner is required");
+        }
+
+        
+        const banner = await uploadOnCloudinary(bannerLocalPath);
+
+        if (!banner) {
+            throw new Error(400, "Failed to upload banner to Cloudinary");
+        }
+
+        
+        res.status(200).json({ banner:banner.url });
+    } catch (error) {
+       
+        res.status(error.statusCode || 500).json({ message: error.message || "Internal Server Error" });
+    }
+});
+
 
 app.post("/signup", (req, res) => {
 
@@ -123,6 +169,135 @@ app.post("/signin", (req, res) => {
     })
 })
 
+app.post("/create-blog",verifyJWT,(req,res)=>{
+
+    let authorId=req.user;
+
+    let{ title,des,banner,tags,content,draft }=req.body;
+
+    if(!title.length){
+        return res.status(403).json({error:"You must provide a title to publish the blog"});
+
+    }
+
+    if(!draft)
+        {
+
+            if(!des.length || des.length>200){
+                return res.status(403).json({error:"You must provide blog description under 200 characters"});
+        
+            }
+            if(!banner.length){
+                return res.status(403).json({error:"You must provide blog Banner to publish the blog"});
+            }
+            if(!content.blocks.length){
+                return res.status(403).json({error:"You must provide Content to publish the blog"});
+            }
+            if(!tags.length || tags.length>10){
+                return res.status(403).json({error:"You must provide tags to publish the blog"});
+            }
+
+        }
+
+    tags=tags.map((tag)=>tag.toLowerCase());
+
+    let blog_id=title.replace(/[^a-zA-Z0-9]/g,' ').replace(/\$+/g,"-").trim()+nanoid();
+
+    let blog=new Blog({
+        title, des,banner,content ,tags ,author:authorId, blog_id ,draft: Boolean(draft)
+    })
+
+    blog.save().then((blog)=>{
+
+        let incrementval=draft ? 0 : 1;
+
+        User.findOneAndUpdate({ _id: authorId},{$inc :{'account_info.total_posts':incrementval}, $push : {'blogs' :blog._id}})
+        .then(user=>{
+            return res.status(200).json({id:blog.blog_id})
+        })
+        .catch (err =>{
+            return res.status(500).json({error:"Failed to update total posts number"})
+        })
+         
+    })
+    .catch(err=>{
+        return res.status(500).json({error:err.message })
+        
+    })
+
+    
+
+})
+
+app.post("/search-blogs",(req,res)=>{
+
+    let {tag} =req.body;
+   
+    let findQuery={ tags:tag , draft:false }
+
+    let maxLimit=5;
+
+    Blog.find(findQuery)
+    .populate("author","personal_info.profile_img personal_info.username personal_info.fullname -_id")
+    .sort({"publishedAt":-1})
+    .select("blog_id title des banner activity tags publishedAt -_id")
+    .limit(maxLimit)
+    .then((blogs)=>{
+        return res.status(200).json({blogs})
+    })
+    .catch((err)=>{
+        return res.status(500).json({error:err.message})
+    })
+
+})
+
+app.post('/latest-blogs',(req,res)=>{
+
+    let {page} =req.body;
+
+    let maxLimit=5;
+
+    Blog.find({draft:false})
+    .populate("author","personal_info.profile_img personal_info.username personal_info.fullname -_id")
+    .sort({"publishedAt":-1})
+    .select("blog_id title des banner activity tags publishedAt -_id")
+    .skip((page-1)*maxLimit)
+    .limit(maxLimit)
+    .then((blogs)=>{
+        return res.status(200).json({blogs})
+    })
+    .catch((err)=>{
+        return res.status(500).json({error:err.message})
+    })
+
+})
+
+app.post('/all-latest-blogs-count',(req,res)=>{
+
+    Blog.countDocuments({draft:false})
+    .then(count=>{
+        return res.status(200).json({totalDocs: count})
+    })
+    .catch(err=>{
+        console.log(err.message)
+        return res.status(500).json({error:err.message})
+    })
+})
+
+app.get('/trending-blogs',(req,res)=>{
+
+    Blog.find({draft:false})
+    .populate("author","personal_info.profile_img personal_info.username personal_info.fullname -_id")
+    .sort({"activity.total_read":-1,"activity.total_likes":-1,"publishedAt":-1})
+    .select("blog_id title  publishedAt -_id")
+    .limit(5)
+    .then((blogs)=>{
+        return res.status(200).json({blogs})
+    })
+    .catch((err)=>{
+        return res.status(500).json({error:err.message})
+    })
+})
 
 
 app.listen(PORT, () => {
