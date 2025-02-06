@@ -5,6 +5,7 @@ import logo from '../imgs/logomv1.png'
 import { useState,useContext } from 'react'
 import {UserContext} from '../App.jsx'
 import UserNavigationPanel from './user-navigation.component.jsx'
+import axios from 'axios'
 
 const Navbar = () => {
 
@@ -130,15 +131,11 @@ const Navbar = () => {
                  </>
 
                }
-         
-
-
             </div>
 
         </nav>
         <Outlet/>
         </>
-
     )
 }
 

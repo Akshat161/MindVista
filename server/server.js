@@ -8,20 +8,32 @@ import cors from 'cors';
 import { uploadOnCloudinary } from './utils/cloudinary.js';
 import { upload } from './middleware/multer.middleware.js';
 import verifyJWT from './middleware/verifyJWT.js';
+import admin from 'firebase-admin';
+import {getAuth} from 'firebase-admin/auth'
+import path from 'path';
+import { createRequire } from 'module';
 
-import Notification from "./Schema/Notification.js";
-import Comment from "./Schema/Comment.js";
 
 // schemas below
 import User from './Schema/User.js'
 import Blog from './Schema/Blog.js'
-import CommentField from '../frontend/src/components/comment-field.component.jsx';
-import { Connect } from 'aws-sdk';
+import Notification from "./Schema/Notification.js";
+import Comment from "./Schema/Comment.js";
+
+// import { Connect } from 'aws-sdk';
 
 
 const app = express();
 
 let PORT = 5000;
+
+const require = createRequire(import.meta.url);
+const serviceAccountKey = require(path.resolve('./mindvista-16-firebase-adminsdk-fbsvc-bae9bb38ab.json'));
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccountKey)
+  });
+
 let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/; // regex for email
 let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/; // regex for password
 
@@ -263,24 +275,67 @@ app.post("/create-blog",verifyJWT,(req,res)=>{
     
 })
 
+// We don't know what eliminate_blog does yet??
+// So we are keeping this route as backup
+
+
+// app.post("/search-blogs",(req,res)=>{
+//     let {tag} =req.body;
+//     let {page}=req.body.page;
+//     let{limit}=req.body;
+//     let{eliminate_blog}=req.body;
+//     //wfhfjkednfcjkdnvjkdbvjkcv
+  
+//     let findQuery={ tags:tag , draft:false,blog_id:{$ne:eliminate_blog} }
+
+//     let maxLimit=limit?limit:2;
+
+//     Blog.find(findQuery)
+//     .populate("author","personal_info.profile_img personal_info.username personal_info.fullname -_id")
+//     .sort({"publishedAt":-1})
+//     .select("blog_id title des banner activity tags publishedAt -_id")
+//     .skip((page-1)*maxLimit)
+//     .limit(maxLimit)
+//     .then((blogs)=>{
+//         return res.status(200).json({blogs})
+//     })
+//     .catch((err)=>{
+//         return res.status(500).json({error:err.message})
+//     })
+// })
+
 app.post("/search-blogs",(req,res)=>{
 
-    let {tag} =req.body;
-    let {page}=req.body.page;
-    let{limit}=req.body;
-    let{eliminate_blog}=req.body;
-    //wfhfjkednfcjkdnvjkdbvjkcv jk
-  
-   
-    let findQuery={ tags:tag , draft:false,blog_id:{$ne:eliminate_blog} }
+    let {tag,query,author} =req.body;
 
-    let maxLimit=limit?limit:2;
+    let {page}=req.body;
+
+    let P;
+    let findQuery;
+
+    if(tag){
+
+        P=page.page;
+       
+        findQuery={tags:tag,draft:false}
+    }
+    else if(query){
+
+        P=page;
+        
+        findQuery={draft:false , title:new RegExp(query,'i')}
+    }
+    else if(author){
+        findQuery={author,draft:false}
+    }
+
+    let maxLimit=5;
 
     Blog.find(findQuery)
     .populate("author","personal_info.profile_img personal_info.username personal_info.fullname -_id")
     .sort({"publishedAt":-1})
     .select("blog_id title des banner activity tags publishedAt -_id")
-    .skip((page-1)*maxLimit)
+    .skip((P-1)*maxLimit)
     .limit(maxLimit)
     .then((blogs)=>{
         return res.status(200).json({blogs})
@@ -291,12 +346,21 @@ app.post("/search-blogs",(req,res)=>{
 
 })
 
-
-
 app.post('/search-blogs-count',(req,res)=>{
-    let{tag}=req.body;
+    let{tag,author, query}=req.body;
 
-    let findQuery ={tags:tag , draft :false}
+    let findQuery ;
+
+    if(tag){
+        findQuery={tags:tag,draft:false}
+    }
+    else if(query){
+        findQuery={draft:false , title:new RegExp(query,'i')}
+    }
+    else if(author){
+        findQuery={author,draft:false}
+    }
+
 
     Blog.countDocuments(findQuery)
     .then(count =>{
@@ -306,6 +370,26 @@ app.post('/search-blogs-count',(req,res)=>{
         return res.status(500).json({error: err.message})
     })
 })
+
+
+app.post('/search-users',(req,res)=>{
+
+    let {query} = req.body;
+
+    User.find({'personal_info.username': new RegExp(query,'i')})
+    .limit(50)
+    .select('personal_info.fullname personal_info.username personal_info.profile_img -_id')
+    .then(users=>{
+        // console.log('Matched Users:', users);
+        return res.status(200).json({users})
+        
+    })
+    .catch(err=>{
+        // console.error('Error fetching users:', err);
+        return res.status(500).json({error:err.message})
+    })
+})
+
 
 app.post("/change-password",verifyJWT,(req,res)=>{
     let{currentPassword,newPassword}= req.body;
@@ -436,6 +520,22 @@ app.post('/all-latest-blogs-count',(req,res)=>{
     })
 })
 
+
+app.post('/get-profile',(req,res)=>{
+
+    let {username} =req.body
+    User.findOne({'personal_info.username':username})
+    .select('-personal_info.password -google_auth -updatedAt -blogs')
+    .then(user=>{
+        return res.status(200).json(user)
+    })
+    .catch(err=>{
+        console.log(err)
+        return res.status(500).json({error: err.message})
+    })
+})
+
+
 app.get('/trending-blogs',(req,res)=>{
 
     Blog.find({draft:false})
@@ -509,7 +609,7 @@ app.post("/like-blog",verifyJWT,(req,res)=>{
     })
 })
 
-server.post("/isliked-by-user",verifyJWT,(req,res)=>{
+app.post("/isliked-by-user",verifyJWT,(req,res)=>{
 
     let user_id=req.user;
 
@@ -681,6 +781,62 @@ app.post( "/notifications",verifyJWT,(req,res)=>{
     let user_id=req.id;
 
     let{page,filter,deletedDocCount}=req.body;
+})
+
+
+
+app.post('/google-auth',async(req,res)=>{
+
+    let {access_token} = req.body;
+
+    getAuth()
+    .verifyIdToken(access_token)
+    .then(async(decodedUser)=>{
+
+        let {email,name,picture} =decodedUser;
+        picture=picture.replace('s96-c','s384-c')
+
+        let user=await User.findOne({'personal_info.email':email})
+                            .select('personal_info.fullname personal_info.username personal_info.profile_img google_auth')
+                            .then((u)=>{
+                                return u || null
+                            })
+                            .catch(err =>{
+                                return res.status(500).json({'error':err.message})
+                            })
+
+        if(user){
+
+            if(!user.google_auth){
+                return res.status(403).json({'error':'This email was signed up without google. Please log in with password to access the account'})
+            }
+
+        }
+        else{
+
+            let username =await generateUsername(email)
+
+            user = new User({
+                personal_info: {fullname:name,email,profile_img:picture,username},
+                google_auth:true
+            })
+
+            await user.save().then((u)=>{
+                user =u;
+            })
+            .catch(err=>{
+                return res.status(500).json({'error':err.message})
+            })
+
+        }   
+        
+        return res.status(200).json(formatDatatoSend(user))
+
+    })
+    .catch(err=>{
+        return res.status(500).json({'error':'failed to authenticate you with google Try with some another google account'})
+    })
+
 })
 
 app.listen(PORT, () => {
