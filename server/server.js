@@ -83,6 +83,7 @@ app.post('/uploadImageInBlog', upload.single('file'), async (req, res) => {
         res.status(error.statusCode || 500).json({ message: error.message || "Internal Server Error" });
     }
 });
+
 app.post(
     '/uploadBanner',
     upload.fields([{ name: 'banner', maxCount: 1 }]),
@@ -377,102 +378,143 @@ app.post('/search-users',(req,res)=>{
 })
 
 
-app.post("/change-password",verifyJWT,(req,res)=>{
-    let{currentPassword,newPassword}= req.body;
+app.post("/change-password", verifyJWT, (req, res) => {
+  let { currentPassword, newPassword } = req.body;
 
-    if(!passwordRegex.test(currentPassword)|| !passwordRegex.test(newPassword)){
-        return res.status(403).json({error:"Password should be 6 to 20 characters long with a numeric, 1 lowercase and 1 uppercase letters"});
-    }
- 
-    User.findOne({_id:req.user})
-    .then((user)=>{
-         if(user.google_auth){
-            return res.status(403).json({error:"You can't change account's password because you logged in through google"})
-         }
-         bcrypt.compare(currentPassword,user.personal_info.password,(err,result)=>{
-            if(err){
-                return res.status(500).json({error:"some error occured while changing the password , please try again later"})
-            }
-            if(!result){
-                return res.status(403).json({error:"Incrrect current password"})
-            }
-            bcrypt.hash(newPassword,10,(err,hashed_password)=>{
-               User.findOneAndUpdate({_id:req.user},{"personal_info.password":hashed_password})
-               .then((u)=>{
-                return res.status(200).json({status:'Password changed'})
+  if (
+    !passwordRegex.test(currentPassword) ||
+    !passwordRegex.test(newPassword)
+  ) {
+    return res.status(403).json({
+      error:
+        "Password should be 6 to 20 characters long with 1 numeric, 1 lowercase and 1 uppercase letters",
+    });
+  }
 
-               })
-               .catch(err=>{
-                return res.status(500).json({error:'Some error occured while saving new password, please try again later' })
-               })
-            })
+  User.findOne({ _id: req.user })
+    .then((user) => {
+      if (user.google_auth) {
+        return res.status(403).json({
+          error:
+            "You can't change account password because you signed in through google",
+        });
+      }
 
-         })
-         .catch(err=>{
-            res.status(500).json({error:"User not found"})
-         })
-    })
-
-})
-app.post("/update-profile",verifyJWT,(req,res)=>{
-
-   let {username,bio,social_links} =req.body;
-
-   let bioLimit = 150;
-
-   if(username.length < 3){
-    return res.status(403).json({error:"Username should be at least 3 letters long"})
-   }
-
-   if(bio.length > bioLimit){
-    return res.status(403).json({error: `Bio should not be more than ${bioLimit} characters `})
-   }
-
-   let socialLinksArr = Object.keys(social_links)
-   try{
-     for(let i=0;i<socialLinksArr.length();i++){
-          if(social_links[socialLinksArr[i]].length){
-              let hostname = new URL(social_links[socialLinksArr[i]]).hostname;
-
-             if(!hostname.includes(`${socialLinksArr[i].com}`) && socialLinksArr[i]!='website' ){
-                return res.status(403).json({error : `${socialLinksArr[i]} link is invalid. You must enter a full `})
-             }
-
+      bcrypt.compare(
+        currentPassword,
+        user.personal_info.password,
+        (err, result) => {
+          if (err) {
+            return res.status(500).json({
+              error:
+                "Some error occured while changing the password, Please try again later",
+            });
           }
-     }
-   }catch(err){
-    return res.status(500).json({error : "You must provide full social links with https(s) included"})
-   }
 
-   let UpdateObj ={
-    "personal_info.username":username,
-    "personal_info.bio":bio,
-    social_links
-   }
-   User.findOneAndUpdate({_id:req.user},updateJob,{
-    runValidators:true
-   })
-   .then(()=>{
-    return res.status(200).json({username})
-   }).catch(err=>{
-    if(err.code == 11000){
-        return res.status(409).json({error:"username is already taken"})
+          if (!result) {
+            return res
+              .status(403)
+              .json({ error: "Incorrect current password" });
+          }
+
+          bcrypt.hash(newPassword, 10, (err, hashed_password) => {
+            User.findOneAndUpdate(
+              { _id: req.user },
+              { "personal_info.password": hashed_password }
+            )
+              .then((u) => {
+                return res.status(200).json({ status: "Password Changed" });
+              })
+              .catch((err) => {
+                return res.status(500).json({
+                  error:
+                    "Some error occured while saving new password, please try again later",
+                });
+              });
+          });
+        }
+      );
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: "User not found" });
+    });
+});
+
+
+app.post("/update-profile", verifyJWT, (req, res) => {
+  let { username, bio, social_links } = req.body;
+
+  let bioLimit = 150;
+
+  if (username.length < 3) {
+    return res
+      .status(403)
+      .json({ error: "Username should be at least 3 letters long" });
+  }
+
+  if (bio.length > bioLimit) {
+    return res
+      .status(403)
+      .json({ error: `Bio  should not be more than ${bioLimit} characters` });
+  }
+
+  let socialLinksArr = Object.keys(social_links);
+
+  try {
+    for (let i = 0; i < socialLinksArr.length; i++) {
+      if (social_links[socialLinksArr[i]].length) {
+        let hostname = new URL(social_links[socialLinksArr[i]]).hostname;
+
+        if (
+          !hostname.includes(`${socialLinksArr[i]}.com`) &&
+          socialLinksArr[i] != "website"
+        ) {
+          return res.status(403).json({
+            error: `${socialLinksArr[i]} link is invalid. Please enter a valid link`,
+          });
+        }
+      }
     }
-    return res.status(500).json({error:err.message})
-   })
+  } catch (err) {
+    return res.status(500).json({
+      error: "You must provide full social links with http(s) included",
+    });
+  }
 
-})
-app.post("/update-profile-img",verifyJWT,(req,res)=>{
-    let {url}=req.body;
+  let updateObj = {
+    "personal_info.username": username,
+    "personal_info.bio": bio,
+    social_links,
+  };
 
-    User.findOneAndUpdate({_id:req.user},{"personal_info.profile_img":url})
-    .then(()=>{
-        return res.status(200).json({profile_img:url})
+  User.findOneAndUpdate({ _id: req.user }, updateObj, {
+    runValidators: true,
+  })
+    .then(() => {
+      return res.status(200).json({ username });
     })
-    .catch(err=>{
-        return res.status(500).json({error:err.message})
+    .catch((err) => {
+      if (err.code == 11000) {
+        return res.status(500).json({ error: "Username is already taken" });
+      }
+      return res.status(500).json({ error: err.message });
+    });
+});
+
+
+app.post("/update-profile-img", verifyJWT, (req, res) => {
+  let { url } = req.body;
+
+  User.findOneAndUpdate({ _id: req.user }, { "personal_info.profile_img": url })
+    .then(() => {
+      return res.status(200).json({ profile_img: url });
     })
-})
+    .catch((err) => {
+      return res.status(500).json({ error: err.message });
+    });
+});
+
 app.post('/latest-blogs',(req,res)=>{
 
     let {page} =req.body;
@@ -570,7 +612,7 @@ app.post("/get-blog", (req, res) => {
       .catch((err) => {
         return res.status(500).json({ error: err.message });
       });
-  });
+});
 
 app.post("/like-blog", verifyJWT, (req, res) => {
   let user_id = req.user;
@@ -807,29 +849,163 @@ app.post("/delete-comment", verifyJWT, (req, res) => {
         return res.status(403).json({ error: "You can not delete the comment" });
       }
     });
-  });
+});
 
-app.get("/new-notification",verifyJWT,(req,res)=>{
-    let user_id=req.user;
-    Notification.exists({notification_for:user_id,seen:false,user:{$ne:user_id} })
-    .then(result=>{
-        if(result){
-            return res.status(200).json({new_notification_available:true});
-        }else{
-            return res.status(200).json({new_notification_available:false});
+app.get("/new-notification", verifyJWT, (req, res) => {
+    let user_id = req.user;
+  
+    Notification.exists({
+      notification_for: user_id,
+      seen: false,
+      user: { $ne: user_id },
+    })
+      .then((result) => {
+        if (result) {
+          return res.status(200).json({ new_notification_available: true });
+        } else {
+          return res.status(200).json({ new_notification_available: false });
         }
-    })
-    .catch(err=>{
+      })
+      .catch((err) => {
         console.log(err.message);
-        return res.status(500).json({error :err.message})
-    })
-})
-app.post( "/notifications",verifyJWT,(req,res)=>{
-    let user_id=req.id;
+        return res.status(500).json({ error: err.message });
+      });
+});
 
-    let{page,filter,deletedDocCount}=req.body;
-})
-
+app.post("/notifications", verifyJWT, (req, res) => {
+    let user_id = req.user;
+  
+    let { page, filter, deletedDocCount } = req.body;
+  
+    let maxLimit = 10;
+  
+    let findQuery = { notification_for: user_id, user: { $ne: user_id } };
+  
+    let skipDocs = (page - 1) * maxLimit;
+  
+    if (filter != "all") {
+      findQuery.type = filter;
+    }
+  
+    if (deletedDocCount) {
+      skipDocs -= deletedDocCount;
+    }
+  
+    Notification.find(findQuery)
+      .skip(skipDocs)
+      .limit(maxLimit)
+      .populate("blog", "title blog_id")
+      .populate(
+        "user",
+        "personal_info.fullname personal_info.username personal_info.profile_img"
+      )
+      .populate("comment", "comment")
+      .populate("replied_on_comment", "comment")
+      .populate("reply", "comment")
+      .sort({ createdAt: -1 })
+      .select("createdAt type seen reply")
+      .then((notifications) => {
+        Notification.updateMany(findQuery, { seen: true })
+          .skip(skipDocs)
+          .limit(maxLimit)
+          .then(() => console.log("notification seen"));
+  
+        return res.status(200).json({ notifications });
+      })
+      .catch((err) => {
+        console.log(err.message);
+        return res.status(500).json({ error: err.message });
+      });
+});
+  
+app.post("/all-notifications-count", verifyJWT, (req, res) => {
+    let user_id = req.user;
+  
+    let { filter } = req.body;
+  
+    let findQuery = { notification_for: user_id, user: { $ne: user_id } };
+  
+    if (filter != "all") {
+      findQuery.type = filter;
+    }
+  
+    Notification.countDocuments(findQuery)
+      .then((count) => {
+        return res.status(200).json({ totalDocs: count });
+      })
+      .catch((err) => {
+        return res.status(500).json({ error: err.message });
+      });
+});
+  
+app.post("/user-written-blogs", verifyJWT, (req, res) => {
+    let user_id = req.user;
+  
+    let { page, draft, query, deletedDocCount } = req.body;
+  
+    let maxLimit = 5;
+    let skipDocs = (page - 1) * maxLimit;
+  
+    if (deletedDocCount) {
+      skipDocs -= deletedDocCount;
+    }
+  
+    Blog.find({ author: user_id, draft, title: new RegExp(query, "i") })
+      .skip(skipDocs)
+      .limit(maxLimit)
+      .sort({ publishedAt: -1 })
+      .select("title banner publishedAt blog_id activity des draft -_id")
+      .then((blogs) => {
+        return res.status(200).json({ blogs });
+      })
+      .catch((err) => {
+        return res.status(500).json({ error: err.message });
+      });
+});
+  
+app.post("/user-written-blogs-count", verifyJWT, (req, res) => {
+    let user_id = req.user;
+  
+    let { draft, query } = req.body;
+  
+    Blog.countDocuments({ author: user_id, draft, title: new RegExp(query, "i") })
+      .then((count) => {
+        return res.status(200).json({ totalDocs: count });
+      })
+      .catch((err) => {
+        console.log(err.message);
+        return res.status(500).json({ error: err.message });
+      });
+});
+  
+app.post("/delete-blog", verifyJWT, (req, res) => {
+    let user_id = req.user;
+    let { blog_id } = req.body;
+  
+    Blog.findOneAndDelete({ blog_id })
+      .then((blog) => {
+        Notification.deleteMany({ blog: blog._id }).then((data) =>
+          console.log("Notifications deleted")
+        );
+  
+        Comment.deleteMany({ blog_id: blog._id }).then((data) =>
+          console.log("Comments deleted")
+        );
+  
+        User.findOneAndUpdate(
+          { _id: user_id },
+          {
+            $pull: { blog: blog._id },
+            $inc: { "account_info.total_posts": blog.draft ? 0 : -1 },
+          }
+        ).then((user) => console.log("Blog deleted"));
+  
+        return res.status(200).json({ status: "done" });
+      })
+      .catch((err) => {
+        return res.status(500).json({ error: err.message });
+      });
+});
 
 
 app.post('/google-auth',async(req,res)=>{

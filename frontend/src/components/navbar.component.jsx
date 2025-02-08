@@ -10,7 +10,6 @@ import axios from 'axios'
 const Navbar = () => {
 
     const [searchBoxVisibility,setSearchBoxVisibility]=useState(false)
-   
     const[userNavPanel,setUserNavPanel] =useState(false);
 
     let navigate = useNavigate();
@@ -51,7 +50,7 @@ const Navbar = () => {
         },200);
         
     }
-    console.log(new_notification_available);
+    
     return (
         <>
         <nav className="navbar z-50">
@@ -59,8 +58,6 @@ const Navbar = () => {
             <Link to="/" className="flex-none w-15 h-20  ">
                 <img src={logo} className="w-full ml-0" />
             </Link>
-
-            <p>{new_notification_available}</p>
 
             <div className={'absolute bg-white w-full left-0 top-full mt-0.! border-b border-grey md:border-0 md:block md:relative md:inset-0 md:p-0 md:w-auto py-4 px-[5vw] md:show ' + (searchBoxVisibility?"show":"hide")}>
                 <input

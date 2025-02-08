@@ -36,6 +36,7 @@ const App = () => {
                 <Route path="/" element={<Navbar />} >
                     <Route index element={<HomePage />} />
                     <Route path="dashboard" element={<SideNav />}>
+                        <Route path="blogs" element={<ManageBlogs />} />
                         <Route path="notifications" element={<Notification />} />
                     </Route>
                     <Route path="settings" element={<SideNav />} >

@@ -6,9 +6,6 @@ import Quote from '@editorjs/quote';
 import Marker from '@editorjs/marker';
 import Inlinecode from '@editorjs/inline-code';
 
-
-
-
 const uploadImageOnCloudinary = async (file) => {
     
     const formData = new FormData();
@@ -28,7 +25,7 @@ const uploadImageOnCloudinary = async (file) => {
   };
 
   
-const uploadImageByFile = async (file) => {
+export const uploadImageByFile = async (file) => {
     try {
       const url = await uploadImageOnCloudinary(file);
       return {
