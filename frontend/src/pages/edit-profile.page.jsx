@@ -16,7 +16,7 @@ const EditProfile =()=>{
 
     const[profile,setProfile]=useState(profileDataStructure);
     const[loading,setLoading] = useState(true);
-    const[charactersLeft,setCharactersLeft] = useState(bio);
+    const[charactersLeft,setCharactersLeft] = useState(bioLimit);
     const[updatedProfieImg,setUpdatedProfileImg] =useState(null);
 
 

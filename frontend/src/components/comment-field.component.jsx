@@ -1,77 +1,87 @@
 import { useContext, useState } from "react";
 import { UserContext } from "../App";
-import toast,{Toaster} from "react-hot-toast";
-import BlogContent from "./blog-content.component";
+import toast, { Toaster } from "react-hot-toast";
+import axios from "axios";
+import { BlogContext } from "../pages/blog.page";
 
-const CommentField=({action,index=undefined,replyingTo=undefined,setReplying})=>{
+const CommentField = ({ action, index = undefined, replyingTo = undefined, setReplying }) => {
 
-   let{ blog,blog:{_id,author:{_id:blog_author},comments,comments:{results:comentsArr},activity:{total_comments,total_parent_comments}},setBlog,setParentCommentsLoaded }=useContext(BlogContent) 
-  let {userAuth:{access_token,username,fullname,profile_img}}=useContext(UserContext);
-   const[comment,setComment]=useState("");
-   const handleComment =()=>{
-    
-    if(!access_token){
-        return toast.error("login first to leave a comment");
-    }
-    
-    if(!comment.length){
-        return toast.error("Write something to leave a comment...")
-    }
+    let { blog, blog: { _id, author: { _id: blog_author }, comments, comments: { results: commentsArr }, activity, activity: { total_comments, total_parent_comments } }, setBlog, setTotalParentCommentsLoaded } = useContext(BlogContext);
 
-     axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/add-comment",{
-        _id,blog_author,comment,replying_to:replyingTo
-     },{
-        headers:{
-            'Authorization':`Bearer ${access_token}`
+    let { userAuth: { access_token, username, fullname, profile_img } } = useContext(UserContext);
+
+    const [ comment, setComment ] = useState("");
+
+    const handleComment = () => {
+
+        if(!access_token){
+            return toast.error("Sign-in first to leave a comment");
         }
-     })
-    .then(({data})=>{
+
+        if(!comment.length){
+            return toast.error("Write something to leave a comment");
+        }
         
-        setComment("");
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/add-comment", {
+            _id, blog_author, comment, replying_to: replyingTo
+        }, {
+            headers: {
+                "Authorization": `Bearer ${access_token}`
+            }
+        })
+        .then(({ data }) => {
+            
+            setComment("");
 
-        data.commented_by ={personal_info:{username,profile_img,fullname} }
-      
-      let newCommentArr;
+            data.commented_by = { personal_info: { username, profile_img, fullname } }
 
-      if(replyingTo){
-         commentsArr[index].children.push(data._id);
-         data.childrenLevel=commentsArr[index].childrenLevel+1;
-         data.parentIndex=index;
+            let newCommentArr;
 
-         commentsArr[index].isReplyLoaded =true;
-         commentsArr.splice(index+1,0,data);
-         newCommentArr = comentsArr
-         setReplying(false);
+            if(replyingTo){
+                
+                commentsArr[index].children.push(data._id);
 
-      }else{
-       
-      data.childrenLevel = 0;
-      newCommentArr=[data,...commentsArr];
+                data.childrenLevel = commentsArr[index].childrenLevel + 1;
+                data.parentIndex = index;
 
-      }
+                commentsArr[index].isReplyLoaded = true;
 
-     
+                commentsArr.splice(index + 1, 0, data);
 
-      let parentCommentIncrementval=replyingTo?0:1;
+                newCommentArr = commentsArr
 
-      setBlog({...blog,comments:{...comments,results:newCommentArr},activity:{...activity,total_comments:total_comments+1,total_parent_comments:total_parent_comments+parentCommentIncrementval}})
-   
-      setParentCommentsLoaded(preVal=>preVal+parentCommentIncrementval)
+                setReplying(false);
 
+            } else {
+                data.childrenLevel = 0;
 
+                newCommentArr = [ data, ...commentsArr ];
+            }
 
-    })
-    .catch(err=>{
-        console.log(err);
-    })
+            let parentCommentIncrementval = replyingTo ? 0 : 1;
 
-   }
+            setBlog({ ...blog, comments: { ...comments, results: newCommentArr }, activity : { ...activity, total_comments: total_comments + 1, total_parent_comments: total_parent_comments + parentCommentIncrementval } })
 
-    return(
+            setTotalParentCommentsLoaded(preVal => preVal + parentCommentIncrementval)
+
+        })
+        .catch(err => {
+            console.log(err);
+        });
+
+    }
+
+    return (
         <>
-        <textarea value={comment} onChange={(e)=>setComment(e.target.value)} placeholder="Leave a comment..." className="input-box pl-5 placeholder:text-dark-grey resize-none h-[150px] overflow-auto"></textarea>
-        <button className="btn-dark mt-5 px-10" onClick={handleComment}>{action}</button>
+            <Toaster />
+            <textarea value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Leave a comment..."
+                className="input-box pl-5 placeholder:text-dark-grey resize-none h-[150px] overflow-auto">
+            </textarea>
+            <button className="btn-dark mt-5 px-10" onClick={handleComment}>{action}</button>
         </>
     )
 }
+
 export default CommentField;

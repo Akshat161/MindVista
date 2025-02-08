@@ -30,32 +30,27 @@ const App = () => {
 
     return (
         <UserContext.Provider value={{ userAuth, setUserAuth }}>
-
             <Routes>
                 <Route path="/editor" element={<Editor />} />
                 <Route path="/editor/:blog_id" element={<Editor />} />
                 <Route path="/" element={<Navbar />} >
                     <Route index element={<HomePage />} />
-                    <Route path="Setting" element={<SideNav />} />
-                    <Route path="edit-profile" element={<EditProfile />} />
-                    <Route path="change-password" element={<ChangePassword />} />
-
-                    <Route path="Dashboard=" element={<SideNav />}>
-                        <Route path="notification" element={<Notification />} />
+                    <Route path="dashboard" element={<SideNav />}>
+                        <Route path="notifications" element={<Notification />} />
+                    </Route>
+                    <Route path="settings" element={<SideNav />} >
+                      <Route path="edit-profile" element={<EditProfile />} />
+                      <Route path="change-password" element={<ChangePassword />} />
                     </Route>
                     <Route path="/signin" element={< UserAuthForm type="sign-in" />} />
                     <Route path="/signup" element={< UserAuthForm type="sign-up" />} />
                     <Route path='search/:query' element={<SearchPage />} />
                     <Route path='user/:id' element={<ProfilePage />}></Route>
+                    <Route path="blog/:blog_id" element={<BlogPage />} />
                     <Route path='*' element={<PageNotFound />} />
-                    <Route path="/blog/:blog_id" element={<BlogPage />} />
-
                 </Route>
             </Routes>
         </UserContext.Provider>
-
-
-
     )
 }
 

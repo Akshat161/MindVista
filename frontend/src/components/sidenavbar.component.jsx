@@ -1,5 +1,5 @@
-import { useContext, useRef, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { useContext, useEffect, useRef, useState } from "react";
+import { NavLink, Outlet ,Navigate } from "react-router-dom";
 import { UserContext } from "../App";
 
 const SideNav =()=>{
@@ -16,7 +16,7 @@ const SideNav =()=>{
     let sideBarIconTab =useRef();
     let pageStateTab =useRef();
 
-   const changePageState=()=>{
+   const changePageState=(e)=>{
      let{offsetWidth,offsetLeft}=e.target;
 
     activeTabLine.current.style.width = offsetWidth + "px";
@@ -29,14 +29,14 @@ const SideNav =()=>{
     
     }
    }
-   useState(()=>{
+   useEffect(()=>{
      setShowSideNav(false);
      pageStateTab.current.click();
    },[pageState])
 
     return(
 
-        access_token==null?<Navigate to='signin'/>:
+        access_token===null?<Navigate to='/signin'/>:
         <>
          <section className="relative flex gap-10 py-0 m-0 max-md:flex-col">
             <div className="sticky top-[80px z-30">
@@ -61,12 +61,12 @@ const SideNav =()=>{
            Blogs
           </NavLink>
           <NavLink to ="/dashboard/notification" onClick={(e)=>setPageState(e.target.innerText)}className="sidebar-link">
-         <div className="relative"> <i className="fi fi-rr-bell"></i>
+         {/* <div className="relative"> <i className="fi fi-rr-bell"></i>
          {
             new_notification_available ? <span className='bg-red w-3 h-3 rounded-full absolute z-10 top-2 right-2'>
                       </span> :""
          }
-         </div>
+         </div> */}
            Notifications
           </NavLink>
           <NavLink to ="/editor" onClick={(e)=>setPageState(e.target.innerText)}className="sidebar-link">
@@ -93,11 +93,15 @@ const SideNav =()=>{
 
             </div>
 
-         </section>
-         <div className="max-md:-mt-8 mt-5 w-full">
+            <div className="max-md:-mt-8 mt-5 w-full">
         <Outlet/>
         </div>
         
+         </section>
+         {/* <div className="max-md:-mt-8 mt-5 w-full">
+        <Outlet/>
+        </div>
+         */}
         </>
     )
 }
