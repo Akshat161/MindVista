@@ -1,8 +1,7 @@
 
-import React, { useEffect } from 'react'
 import { Link ,Outlet, useNavigate} from 'react-router-dom'
 import logo from '../imgs/logomv1.png'
-import { useState,useContext } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import {UserContext} from '../App.jsx'
 import UserNavigationPanel from './user-navigation.component.jsx'
 import axios from 'axios'
@@ -20,14 +19,14 @@ const Navbar = () => {
      if(access_token){
         axios.get(import.meta.env.VITE_SERVER_DOMAIN + "/new-notification",{
             headers:{
-                "Authorization":`Bearer${access_token}`
+                "Authorization":`Bearer ${access_token}`
             }
         })
-        .then(({data})=>{
-           setUserAuth({...userAuth,...data})
+        .then(({ data })=>{
+           setUserAuth({ ...userAuth, ...data })
         })
         .catch(err=>{
-            console.log(err.message);
+            console.log(err);
         })
      }
     },[access_token])
@@ -81,23 +80,22 @@ const Navbar = () => {
                </button>
 
                <Link to="/editor" className='hidden md:flex gap-2 link'>
-               <i  className="fi fi-rr-file-edit"></i>
+                <i  className="fi fi-rr-file-edit"></i>
                 <p>Write</p>
                </Link>
 
 
                {
-                 access_token?
+                 access_token ?
                  <>
-                     <Link to="/dashboard/notification">
-                     <button className='w-12 h-12 rounded-full bg-grey relative hover:bg-black/10'>
-                         <i className='fi fi-rr-bell text-2xl block mt-1'></i>
-                         {
-                            new_notification_available ? <span className='bg-red w-3 h-3 rounded-full absolute z-10 top-2 right-2'>
-                      </span> :""
-                         }
-                      
-                     </button>
+                     <Link to="/dashboard/notifications">
+                        <button className='w-12 h-12 rounded-full bg-grey relative hover:bg-black/10'>
+                            <i className='fi fi-rr-bell text-2xl block mt-1'></i>
+                            {
+                                new_notification_available ? <span className='bg-red w-3 h-3 rounded-full absolute z-10 top-2 right-2'></span> :""
+                            }
+                        
+                        </button>
                      </Link>
 
                      <div className="relative" onClick={handelUserNavPanel} onBlur={handelBlur}>
@@ -107,26 +105,20 @@ const Navbar = () => {
                         </button>
 
                         {
-                            userNavPanel ?
-                            <UserNavigationPanel/> :""
-
+                            userNavPanel ? <UserNavigationPanel/> :""
                         }
-                        
-
                      </div>
-
                  </>
                  :
                  <>
-               <Link to="/signin" className="btn-dark py-2">
-               Sign In
-               </Link>
+                    <Link to="/signin" className="btn-dark py-2">
+                        Sign In
+                    </Link>
 
-               <Link to="/signup" className="btn-light py-2 hidden md:block">
-               Sign Up
-               </Link>
+                    <Link to="/signup" className="btn-light py-2 hidden md:block">
+                        Sign Up
+                    </Link>
                  </>
-
                }
             </div>
 

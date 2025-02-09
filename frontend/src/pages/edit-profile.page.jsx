@@ -64,8 +64,9 @@ const EditProfile = () => {
             e.target.setAttribute("disabled", true);
 
             uploadImageByFile(updatedProfileImg)
-            .then(url => {
-                console.log(url);
+            .then(res => {
+                let url = res.file.url;
+
                 if(url){
                     axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/update-profile-img", { url }, {
                         headers: {

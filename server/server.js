@@ -13,7 +13,6 @@ import {getAuth} from 'firebase-admin/auth'
 import path from 'path';
 import { createRequire } from 'module';
 
-
 // schemas below
 import User from './Schema/User.js'
 import Blog from './Schema/Blog.js'
