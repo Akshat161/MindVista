@@ -1014,7 +1014,7 @@ app.post('/google-auth',async(req,res)=>{
     getAuth()
     .verifyIdToken(access_token)
     .then(async(decodedUser)=>{
-
+         console.log(decodedUser)
         let {email,name,picture} =decodedUser;
         picture=picture.replace('s96-c','s384-c')
 
@@ -1042,6 +1042,8 @@ app.post('/google-auth',async(req,res)=>{
                 personal_info: {fullname:name,email,profile_img:picture,username},
                 google_auth:true
             })
+
+           
 
             await user.save().then((u)=>{
                 user =u;

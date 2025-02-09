@@ -22,6 +22,7 @@ const App = () => {
 
     const [userAuth, setUserAuth] = useState({});
 
+    // 
     useEffect(() => {
 
         let userInSession = lookInSession("user");
