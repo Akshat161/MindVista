@@ -1014,7 +1014,7 @@ app.post('/google-auth',async(req,res)=>{
     getAuth()
     .verifyIdToken(access_token)
     .then(async(decodedUser)=>{
-         console.log(decodedUser)
+ 
         let {email,name,picture} =decodedUser;
         picture=picture.replace('s96-c','s384-c')
 

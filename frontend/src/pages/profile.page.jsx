@@ -36,7 +36,7 @@ const ProfilePage = () => {
     let [profile, setProfile] = useState(profileDataStructure);
     let [loading, setLoading] = useState(true);
     let [blogs, setBlogs] = useState(null)
-    let [profileLoaded, setProfileLoaded] =useState("");
+    let [profileLoaded, setProfileLoaded] = useState("");
 
     let { personal_info: { fullname, username: profile_username, profile_img, bio }, account_info: { total_posts, total_reads }, social_links, joinedAt } = profile;
 
@@ -46,7 +46,7 @@ const ProfilePage = () => {
         axios.post(import.meta.env.VITE_SERVER_DOMAIN + '/get-profile', { username: profileId })
             .then(({ data: user }) => {
 
-                if(user!=null){
+                if (user != null) {
                     setProfile(user)
                 }
 
@@ -87,17 +87,16 @@ const ProfilePage = () => {
     }
 
     useEffect(() => {
-
-        if(profileId!=profileLoaded){
+        if (profileId != profileLoaded) {
             setBlogs(null)
         }
 
-        if(blogs==null){
+        if (blogs == null) {
             resetStates()
             fetchUserProfile()
         }
 
-    }, [profileId,blogs])
+    }, [profileId, blogs])
 
     const resetStates = () => {
         setProfile(profileDataStructure);
@@ -108,7 +107,7 @@ const ProfilePage = () => {
     return (
         <AnimationWrapper>
             {
-                loading ? <Loader /> :profile_username.length?
+                loading ? <Loader /> : profile_username.length ?
                     <section className="h-cover md:flex flex-row-reverse items-start gap-5 min-[1100px] :gap-12">
 
                         <div className="flex flex-col max-md:items-center gap-5 min-w-[250px] md:w-[50%] md:pl-8 md:border-1 border-grey md:sticky md:top-[100px] md:py-10">
@@ -160,14 +159,14 @@ const ProfilePage = () => {
                                     <LoadMoreDataBtn state={blogs} fetchDataFun={getBlogs} />
                                 </>
 
-                                <AboutUser bio={bio} social_links={social_links} joinedAt={joinedAt}/>
+                                <AboutUser bio={bio} social_links={social_links} joinedAt={joinedAt} />
 
                             </InPageNavigation>
                         </div>
 
 
                     </section>
-                    :<PageNotFound/>
+                    : <PageNotFound />
 
             }
         </AnimationWrapper>
