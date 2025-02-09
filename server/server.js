@@ -27,7 +27,7 @@ const app = express();
 let PORT = 5000;
 
 const require = createRequire(import.meta.url);
-const serviceAccountKey = require(path.resolve('./mindvista-16-firebase-adminsdk-fbsvc-bae9bb38ab.json'));
+const serviceAccountKey = require(path.resolve('./mindvistablogs-firebase-adminsdk-fbsvc-cb452b53b9.json'));
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccountKey)

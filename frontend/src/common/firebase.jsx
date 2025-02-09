@@ -4,20 +4,18 @@ import { getAnalytics } from "firebase/analytics";
 import {GoogleAuthProvider, getAuth, signInWithPopup} from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAVomewLxqNGkfLWrmqOkiQ-i-Nyc_Nlxk",
-  authDomain: "mindvista-16.firebaseapp.com",
-  projectId: "mindvista-16",
-  storageBucket: "mindvista-16.firebasestorage.app",
-  messagingSenderId: "761923337955",
-  appId: "1:761923337955:web:4a96f6d2b79df9b593cfd6",
-  measurementId: "G-KP9D5QWL09"
-};
-
+    apiKey: "AIzaSyBLBJhnnq9Q-u2IDjJR48oeGwi-6qI7Gws",
+    authDomain: "mindvistablogs.firebaseapp.com",
+    projectId: "mindvistablogs",
+    storageBucket: "mindvistablogs.firebasestorage.app",
+    messagingSenderId: "785066330329",
+    appId: "1:785066330329:web:a71bb2d5c75e43499656c8",
+    measurementId: "G-2R7S2RD23T"
+  };
+  
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-
-//google auth
 
 const provider =new GoogleAuthProvider();
 
