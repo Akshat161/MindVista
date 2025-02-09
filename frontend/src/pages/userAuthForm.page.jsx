@@ -14,9 +14,7 @@ import { authWithGoogle } from '../common/firebase';
 const UserAuthForm = ({ type }) => {
 
 
-   let { userAuth: {access_token},setUserAuth} = useContext(UserContext)
-  
-
+  let { userAuth: {access_token},setUserAuth} = useContext(UserContext)
   
   const userAuthThroughServer=(serverRoute,formData)=>{
 
@@ -85,10 +83,10 @@ const UserAuthForm = ({ type }) => {
     e.preventDefault();
     authWithGoogle().then(user=>{
 
-      let serverRoute='/google-auth'
+      let serverRoute='/google-auth'      
 
       let formData={
-        access_token :user.access_token
+        access_token :user.accessToken
       }
 
       userAuthThroughServer(serverRoute,formData)
