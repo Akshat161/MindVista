@@ -142,3 +142,4 @@ A modern **full-stack blogging platform** built with the **MERN stack**, designe
 ## 👨‍💻 Authors
 
 * **Shikhar Gupta** – [GitHub](https://github.com/ShikharGupta0813)
+* **Akshat Trivedi** – [GitHub](https://github.com/ShikharGupta0813)
